@@ -1,0 +1,10 @@
+[General]
+ColorScheme=BreezeDark
+
+[KDE]
+widgetStyle=Breeze
+# 0 disables UI animations globally (smoother over VNC)
+AnimationDurationFactor=0
+
+[Icons]
+Theme=breeze-dark

@@ -1,0 +1,4 @@
+# CachyOS x86-64-v3 optimized repository
+Server = https://cdn.cachyos.org/repo/x86_64_v3/$repo
+Server = https://us.cachyos.org/repo/x86_64_v3/$repo
+Server = https://cdn77.cachyos.org/repo/x86_64_v3/$repo

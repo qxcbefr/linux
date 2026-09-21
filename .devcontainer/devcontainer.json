@@ -1,0 +1,11 @@
+{
+  "name": "CachyOS KasmVNC",
+  "forwardPorts": [6901],
+  "portsAttributes": {
+    "6901": {
+      "label": "KasmVNC — CachyOS Plasma desktop (browser)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "docker compose up -d --build"
+}

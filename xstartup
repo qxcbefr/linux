@@ -1,0 +1,17 @@
+#!/bin/sh
+# KasmVNC session script: starts the KDE Plasma X11 session.
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+# Best-effort session bus (some Plasma components want one)
+if command -v dbus-launch >/dev/null 2>&1; then
+  eval "$(dbus-launch --sh-syntax)"
+  export DBUS_SESSION_BUS_ADDRESS
+fi
+
+export XDG_CURRENT_DESKTOP=KDE
+export DESKTOP_SESSION=plasma
+export KDE_FULL_SESSION=true
+export QT_QPA_PLATFORM=xcb
+
+exec startplasma-x11

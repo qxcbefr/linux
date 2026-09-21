@@ -1,0 +1,14 @@
+*
+!.gitignore
+!Dockerfile
+!docker-compose.yml
+!pacman.conf
+!cachyos-mirrorlist
+!cachyos-v3-mirrorlist
+!entrypoint.sh
+!start-desktop.sh
+!kasmvnc.yaml
+!xstartup
+!kde/
+!kde/**
+!README.md

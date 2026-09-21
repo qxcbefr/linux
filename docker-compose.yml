@@ -1,0 +1,30 @@
+services:
+  cachyos-vnc:
+    build: .
+    image: cachyos-vnc:latest
+    container_name: cachyos-vnc
+    shm_size: "1gb"          # Plasma + browser client need more than the 64MB default
+    ports:
+      - "6901:6901/tcp"      # KasmVNC web client (open http://localhost:6901)
+      - "6901:6901/udp"      # KasmVNC WebRTC/UDP transit (smoother streaming)
+    environment:
+      VNC_PW: "cachyos"
+      VNC_RESOLUTION: "1600x900"
+      VNC_DEPTH: "24"
+      NOVNC_PORT: "6901"
+    # --- GPU passthrough (uncomment what applies to you) ----------------------
+    # Intel/AMD: expose the render node for DRI3 + VAAPI video encoding
+    # devices:
+    #   - "/dev/dri:/dev/dri"
+    # NVIDIA (needs nvidia-container-toolkit on the host):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    # environment:
+    #   NVIDIA_VISIBLE_DEVICES: all
+    #   NVIDIA_DRIVER_CAPABILITIES: all
+    restart: unless-stopped

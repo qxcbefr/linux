@@ -1,0 +1,15 @@
+# KWin (Plasma) tuned for a containerized desktop: compositing on with the
+# lightweight XRender backend, animations disabled for snappy VNC streaming.
+# (Switch Backend to "OpenGL" if you pass a GPU through with --device /dev/dri)
+[Compositing]
+Enabled=true
+Backend=XRender
+OpenGLIsUnsafe=false
+WindowsBlockCompositing=false
+LatencyPolicy=UltraLow
+
+[org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+buttonsOnLeft=
+buttonsOnRight=HA

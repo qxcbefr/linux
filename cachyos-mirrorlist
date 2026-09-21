@@ -1,0 +1,4 @@
+# CachyOS repository (standard x86_64 packages)
+Server = https://cdn.cachyos.org/repo/x86_64/$repo
+Server = https://us.cachyos.org/repo/x86_64/$repo
+Server = https://cdn77.cachyos.org/repo/x86_64/$repo
