@@ -9,6 +9,16 @@ services:
     # is only allowed/NATed for the default 172.17.0.0/16 subnet - containers on
     # compose networks (172.18.x) get no route out and DNS dies.
     network_mode: bridge
+    # Privileged: QEMU/KVM Android VM needs /dev/kvm access (waydroid is not an
+    # option - the Azure host kernel has no binderfs/binder driver).
+    privileged: true
+    devices:
+      - "/dev/kvm:/dev/kvm"
+    volumes:
+      # Android VM disk + ISO survive container rebuilds
+      - "android-vm:/var/lib/android-vm"
+      # Persistent pacman cache so reinstalls don't re-download everything
+      - "pacman-cache:/var/cache/pacman/pkg"
     ports:
       - "6901:6901/tcp"      # KasmVNC web client (open http://localhost:6901)
       - "6901:6901/udp"      # KasmVNC WebRTC/UDP transit (smoother streaming)
@@ -33,3 +43,7 @@ services:
     #   NVIDIA_VISIBLE_DEVICES: all
     #   NVIDIA_DRIVER_CAPABILITIES: all
     restart: unless-stopped
+
+volumes:
+  android-vm:
+  pacman-cache:

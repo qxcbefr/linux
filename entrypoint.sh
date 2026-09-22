@@ -102,6 +102,17 @@ done
 # Logs end up on the container's stdout
 mkdir -p /var/log/journal
 
+# KVM access for the desktop user (QEMU Android VM needs /dev/kvm; with the
+# privileged container the node exists but is owned by host root:root)
+if [ -e /dev/kvm ]; then
+  chmod 666 /dev/kvm
+  echo "[cachyos-vnc] /dev/kvm available - KVM acceleration enabled"
+fi
+
+# QEMU/Android VM workspace lives on a named volume (survives rebuilds)
+mkdir -p /var/lib/android-vm
+chown "${USER_NAME}:${USER_NAME}" /var/lib/android-vm 2>/dev/null || true
+
 # ---------------------------------------------------------------------------
 # Drop privileges and run the desktop session as ${USER}
 # ---------------------------------------------------------------------------

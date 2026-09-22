@@ -79,6 +79,9 @@ RUN pacman -Syu --needed --noconfirm \
       nano vim xterm \
       dbus dbus-glib \
       polkit \
+      # Android VM: QEMU with KVM (waydroid impossible - Azure host kernel lacks
+      # binderfs). qemu-desktop covers q35/virtio graphics+input+net.
+      qemu-desktop \
     # Perl modules used by kasmvncpasswd/kasmvncserver (best-effort: a missing
     # module must not break the build; start-desktop.sh has an openssl fallback
     # for the password file if the perl tooling can't run)
@@ -112,6 +115,12 @@ RUN useradd -m -u ${UID} -G wheel,video,audio,render,input -s /bin/bash ${USER} 
 COPY --chown=${USER}:${USER} kde/ /home/${USER}/.config/
 COPY --chown=${USER}:${USER} xstartup /home/${USER}/.vnc/xstartup
 COPY start-desktop.sh /usr/local/bin/start-desktop.sh
+COPY start-android-vm.sh /usr/local/bin/start-android-vm.sh
+
+# Plasma desktop shortcut for the Android VM (user double-clicks it)
+RUN mkdir -p /home/${USER}/Desktop && \
+    printf '[Desktop Entry]\nType=Application\nName=Android VM\nGenericName=Android-x86 in QEMU/KVM\nComment=Boot the Android virtual machine (KVM accelerated)\nExec=/usr/local/bin/start-android-vm.sh\nIcon=phone\nTerminal=false\nCategories=System;Emulator;\n' > /home/${USER}/Desktop/android-vm.desktop && \
+    chmod +x /home/${USER}/Desktop/android-vm.desktop /usr/local/bin/start-android-vm.sh
 RUN chmod +x /home/${USER}/.vnc/xstartup /usr/local/bin/start-desktop.sh && \
     mkdir -p /home/${USER}/.vnc /home/${USER}/.cache && \
     chown -R ${USER}:${USER} /home/${USER}/.vnc /home/${USER}/.config
