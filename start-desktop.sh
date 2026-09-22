@@ -42,9 +42,10 @@ echo "[cachyos-vnc] starting Xkasmvnc on :${DISPLAY_NUM} (web client on port ${P
   -depth "${D}" \
   -websocketPort "${PORT}" \
   -interface 0.0.0.0 \
+  -publicIP 127.0.0.1 \
   -httpd /usr/share/kasmvnc/www \
   -KasmPasswordFile "${HOME}/.kasmpasswd" \
-  -sslOnly off \
+  -SecurityTypes None \
   -AlwaysShared -AcceptCutText -SendCutText &
 XVNC_PID=$!
 

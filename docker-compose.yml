@@ -4,6 +4,11 @@ services:
     image: cachyos-vnc:latest
     container_name: cachyos-vnc
     shm_size: "1gb"          # Plasma + browser client need more than the 64MB default
+    # Use Docker's default bridge (docker0) instead of a compose-created network.
+    # Reason: in sandboxed environments (GitHub codespaces, nested docker), egress
+    # is only allowed/NATed for the default 172.17.0.0/16 subnet - containers on
+    # compose networks (172.18.x) get no route out and DNS dies.
+    network_mode: bridge
     ports:
       - "6901:6901/tcp"      # KasmVNC web client (open http://localhost:6901)
       - "6901:6901/udp"      # KasmVNC WebRTC/UDP transit (smoother streaming)

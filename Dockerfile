@@ -19,6 +19,11 @@ RUN pacman -Syu --noconfirm && \
 # Generate en_US.UTF-8 locale
 RUN sed -i 's/^#en_US\.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 
+# pacman 7.1's hook sandbox can't isolate the network inside docker ("could not
+# isolate the network (Operation not permitted)"), and its DisableSandbox*
+# directives are not accepted in pacman.conf - so wrap pacman with the CLI flag.
+RUN printf '#!/bin/sh\nexec /usr/bin/pacman --disable-sandbox "$@"\n' > /usr/local/bin/pacman && chmod +x /usr/local/bin/pacman
+
 # Switch to CachyOS repositories (static mirrorlists pinned to correct repo layout:
 # x86_64/cachyos and x86_64_v3/{cachyos-v3,cachyos-core-v3,cachyos-extra-v3})
 COPY pacman.conf /etc/pacman.conf
@@ -69,10 +74,11 @@ RUN pacman -Syu --needed --noconfirm \
       xorg-xauth xorg-xkbcomp xkeyboard-config \
       xorg-fonts-100dpi xorg-fonts-75dpi xorg-fonts-encodings \
       libxfont2 libxshmfence libglvnd mesa intel-media-driver mesa-utils \
-      libbsd libunwind pixman openssl \
+      libbsd libunwind pixman openssl libxcrypt \
       shared-mime-info \
       nano vim xterm \
       dbus dbus-glib \
+      polkit \
     # Perl modules used by kasmvncpasswd/kasmvncserver (best-effort: a missing
     # module must not break the build; start-desktop.sh has an openssl fallback
     # for the password file if the perl tooling can't run)
@@ -84,6 +90,10 @@ RUN pacman -Syu --needed --noconfirm \
     && (update-desktop-database /usr/share/applications || true) \
     && (gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor /usr/share/icons/breeze 2>/dev/null || true) \
     && pacman -Scc --noconfirm
+
+# KasmVNC binaries (Debian build) link against libcrypt.so.1; Arch's libxcrypt
+# (API-compatible drop-in) only ships libcrypt.so.2 -> add a compat symlink.
+RUN ln -sf libcrypt.so.2 /usr/lib/libcrypt.so.1 && ldconfig
 
 # KasmVNC config (GPU/DRI3 node, encoding tuning, plain ws:// for local use)
 COPY kasmvnc.yaml /etc/kasmvnc/kasmvnc.yaml

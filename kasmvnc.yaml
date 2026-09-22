@@ -17,10 +17,9 @@ network:
   use_ipv4: true
   use_ipv6: false
   udp:
-    public_ip: auto
+    public_ip: 127.0.0.1     # static IP bypasses STUN lookups (docs: use server IP for
+                             # same-host/private networks); STUN probes fail inside Docker
     port: auto
-    payload_size: auto
-    stun_server: auto         # disabled by default in 1.5.0 (no external lookups)
   ssl:
     pem_certificate: /etc/ssl/certs/ssl-cert-snakeoil.pem
     pem_key: /etc/ssl/private/ssl-cert-snakeoil.key

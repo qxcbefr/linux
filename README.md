@@ -50,7 +50,7 @@ KasmVNC shows an HTTP Basic auth prompt — enter the username `cachyos` and the
 
 > Plain `ws://` is enabled for localhost use. For remote exposure set
 > `network.ssl.require_ssl: true` in `kasmvnc.yaml` (a self-signed cert is
-> generated at `~/.vnc/self.pem`) and put a reverse proxy with TLS in front.
+> generated at `~/.vnc/self.pem`) and put a reverse proxy with TLS in front.n
 
 ## GPU acceleration
 
