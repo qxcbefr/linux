@@ -7,6 +7,7 @@
 !cachyos-v3-mirrorlist
 !entrypoint.sh
 !start-desktop.sh
+!start-android-vm.sh
 !kasmvnc.yaml
 !xstartup
 !kde/

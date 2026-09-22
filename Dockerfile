@@ -79,9 +79,11 @@ RUN pacman -Syu --needed --noconfirm \
       nano vim xterm \
       dbus dbus-glib \
       polkit \
-      # Android VM: QEMU with KVM (waydroid impossible - Azure host kernel lacks
-      # binderfs). qemu-desktop covers q35/virtio graphics+input+net.
-      qemu-desktop \
+      # Android (waydroid) + gaming (steam). steam pulls its own deps; waydroid
+      # is kept although the Azure host kernel lacks binder (see entrypoint note).
+      waydroid \
+      steam \
+      vulkan-swrast lib32-vulkan-swrast \
     # Perl modules used by kasmvncpasswd/kasmvncserver (best-effort: a missing
     # module must not break the build; start-desktop.sh has an openssl fallback
     # for the password file if the perl tooling can't run)
@@ -94,9 +96,40 @@ RUN pacman -Syu --needed --noconfirm \
     && (gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor /usr/share/icons/breeze 2>/dev/null || true) \
     && pacman -Scc --noconfirm
 
-# KasmVNC binaries (Debian build) link against libcrypt.so.1; Arch's libxcrypt
-# (API-compatible drop-in) only ships libcrypt.so.2 -> add a compat symlink.
-RUN ln -sf libcrypt.so.2 /usr/lib/libcrypt.so.1 && ldconfig
+# Lock screen unlocks without a password: KasmVNC login is the real auth gate
+# and the "cachyos" shadow password is locked, so the vendor kde PAM (pam_unix)
+# always failed with "Unlocking failed". /etc/pam.d overrides /usr/lib/pam.d.
+RUN printf '%s\n' \
+      '#%PAM-1.0' \
+      '# Unlock without a password: KasmVNC login is the authentication gate, so' \
+      '# the in-desktop lock screen just permits (pam_unix would ALWAYS fail).' \
+      'auth       sufficient   pam_permit.so' \
+      'account    include      system-local-login' \
+      'password   sufficient   pam_permit.so' \
+      'session    include      system-local-login' \
+      > /etc/pam.d/kde
+
+# KDE session tuning (CPUTINU light): wire in the repo kde/ configs (colors,
+# kwin XRender low-latency) and disable CPU/RAM-eating background services:
+# - Baloo file indexer (constant CPU + RAM on large trees)
+# Plus konsole default profile (fixes "Could not find ''" warning).
+COPY kde/kdeglobals kde/kwinrc /tmp/kde-config/
+RUN mkdir -p /home/${USER}/.config /home/${USER}/.local/share/konsole \
+      /home/${USER}/.config/autostart \
+    && cp /tmp/kde-config/kdeglobals /home/${USER}/.config/kdeglobals \
+    && cp /tmp/kde-config/kwinrc /home/${USER}/.config/kwinrc \
+    && printf '[General]\nName=Default\nCommand=/bin/bash\n' \
+         > /home/${USER}/.local/share/konsole/Default.profile \
+    && printf '[Desktop Entry]\nDefaultProfile=Default.profile\n' \
+         > /home/${USER}/.config/konsolerc \
+    && printf '[Basic Settings]\nIndexing-Enabled=false\n' \
+         > /home/${USER}/.config/baloorc \
+    && chown -R ${USER}:${USER} /home/${USER}/.config /home/${USER}/.local
+
+# KasmVNC binaries (Debian build) link against libcrypt.so.1; the proper fix is
+# the libxcrypt-compat package (an unowned symlink breaks `pacman -S steam` etc.
+# with "libcrypt.so.1 exists in filesystem").
+RUN pacman -S --noconfirm --disable-sandbox libxcrypt-compat && ldconfig
 
 # KasmVNC config (GPU/DRI3 node, encoding tuning, plain ws:// for local use)
 COPY kasmvnc.yaml /etc/kasmvnc/kasmvnc.yaml
@@ -110,17 +143,21 @@ ARG UID=1000
 RUN useradd -m -u ${UID} -G wheel,video,audio,render,input -s /bin/bash ${USER} && \
     echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER}
 
+# yay (AUR helper): built as the non-root user (makepkg refuses root),
+# installed with the repo's own pacman wrapper (--disable-sandbox baked in).
+RUN pacman -S --needed --noconfirm base-devel git go && \
+    install -d -o ${USER} -g ${USER} /tmp/yay-build && \
+    runuser -u ${USER} -- bash -c 'cd /tmp/yay-build && \
+      git clone -q --depth=1 https://aur.archlinux.org/yay.git && \
+      cd yay && makepkg -sf --noconfirm' && \
+    pacman -U --noconfirm /tmp/yay-build/yay/*.pkg.tar.zst && \
+    rm -rf /tmp/yay-build
+
 # Session config (Plasma look & feel + baloo off)
 # NOTE: use explicit /home/${USER} paths — ${HOME} is not defined at build time
 COPY --chown=${USER}:${USER} kde/ /home/${USER}/.config/
 COPY --chown=${USER}:${USER} xstartup /home/${USER}/.vnc/xstartup
 COPY start-desktop.sh /usr/local/bin/start-desktop.sh
-COPY start-android-vm.sh /usr/local/bin/start-android-vm.sh
-
-# Plasma desktop shortcut for the Android VM (user double-clicks it)
-RUN mkdir -p /home/${USER}/Desktop && \
-    printf '[Desktop Entry]\nType=Application\nName=Android VM\nGenericName=Android-x86 in QEMU/KVM\nComment=Boot the Android virtual machine (KVM accelerated)\nExec=/usr/local/bin/start-android-vm.sh\nIcon=phone\nTerminal=false\nCategories=System;Emulator;\n' > /home/${USER}/Desktop/android-vm.desktop && \
-    chmod +x /home/${USER}/Desktop/android-vm.desktop /usr/local/bin/start-android-vm.sh
 RUN chmod +x /home/${USER}/.vnc/xstartup /usr/local/bin/start-desktop.sh && \
     mkdir -p /home/${USER}/.vnc /home/${USER}/.cache && \
     chown -R ${USER}:${USER} /home/${USER}/.vnc /home/${USER}/.config
